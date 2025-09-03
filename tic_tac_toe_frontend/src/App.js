@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import './App.css';
+import Board from './components/Board';
+import { calculateWinner, findBestMove } from './utils/gameLogic';
 
 /**
  * Minimalistic Tic Tac Toe built with React.
@@ -16,63 +18,6 @@ import './App.css';
  *  - Secondary: #ffffff
  */
 
-// Utilities
-const LINES = [
-  [0, 1, 2],
-  [3, 4, 5],
-  [6, 7, 8],
-
-  [0, 3, 6],
-  [1, 4, 7],
-  [2, 5, 8],
-
-  [0, 4, 8],
-  [2, 4, 6],
-];
-
-function calculateWinner(squares) {
-  for (const [a, b, c] of LINES) {
-    if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
-      return { winner: squares[a], line: [a, b, c] };
-    }
-  }
-  return null;
-}
-
-function findBestMove(squares, aiMark, humanMark) {
-  // Very basic AI: 1) win if possible 2) block if needed 3) center 4) corner 5) side
-  const emptyIndices = squares
-    .map((v, i) => (v ? null : i))
-    .filter((v) => v !== null);
-
-  // 1) Try to win
-  for (const idx of emptyIndices) {
-    const clone = squares.slice();
-    clone[idx] = aiMark;
-    if (calculateWinner(clone)?.winner === aiMark) return idx;
-  }
-
-  // 2) Try to block human
-  for (const idx of emptyIndices) {
-    const clone = squares.slice();
-    clone[idx] = humanMark;
-    if (calculateWinner(clone)?.winner === humanMark) return idx;
-  }
-
-  // 3) Take center
-  if (emptyIndices.includes(4)) return 4;
-
-  // 4) Corners
-  const corners = [0, 2, 6, 8].filter((i) => emptyIndices.includes(i));
-  if (corners.length) return corners[Math.floor(Math.random() * corners.length)];
-
-  // 5) Sides
-  const sides = [1, 3, 5, 7].filter((i) => emptyIndices.includes(i));
-  if (sides.length) return sides[Math.floor(Math.random() * sides.length)];
-
-  return null;
-}
-
 // PUBLIC_INTERFACE
 export default function App() {
   /**
@@ -86,7 +31,6 @@ export default function App() {
   const [aiThinking, setAiThinking] = useState(false);
 
   const currentPlayer = xIsNext ? 'X' : 'O';
-  const opponent = xIsNext ? 'O' : 'X';
   const result = useMemo(() => calculateWinner(squares), [squares]);
   const isBoardFull = squares.every(Boolean);
   const gameOver = !!result || (isBoardFull && !result);
@@ -245,27 +189,6 @@ export default function App() {
       <footer className="t3-footer">
         <span>Made with React</span>
       </footer>
-    </div>
-  );
-}
-
-function Board({ squares, onPlay, winLine }) {
-  return (
-    <div className="t3-board" role="grid" aria-label="Tic Tac Toe Board">
-      {squares.map((value, idx) => {
-        const isWinning = winLine.includes(idx);
-        return (
-          <button
-            key={idx}
-            role="gridcell"
-            aria-label={`Cell ${idx + 1}`}
-            className={`t3-cell ${isWinning ? 'win' : ''} ${value === 'X' ? 'x' : value === 'O' ? 'o' : ''}`}
-            onClick={() => onPlay(idx)}
-          >
-            {value}
-          </button>
-        );
-      })}
     </div>
   );
 }
